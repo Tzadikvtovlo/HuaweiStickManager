@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "HuaweiStickManager",
+  "version": "1.0",
+  "description": "ניהול, ניטור ועיצוב חכם עבור סטיק של וואווי",
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "sidePanel",
+    "cookies"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://api.github.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "popup.html?mode=sidepanel"
+  },
+  "options_page": "popup.html?mode=tab",
+  "action": {
+    "default_popup": "popup.html?mode=popup",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
