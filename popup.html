@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>HuaweiStickManager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  
+  <!-- תיבת הודעות פנימית (Toast) -->
+  <div id="internalToast" class="internal-toast"></div>
+
+  <!-- שדה נסתר לקליטת קובץ יבוא הגדרות -->
+  <input type="file" id="importFileInput" accept=".json" style="display:none">
+
+  <!-- באנר עדכון ייעודי -->
+  <div class="update-alert-box" id="updateAlertBox">
+    <div class="update-alert-content">
+      <svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      <span id="updateAlertText">גרסה חדשה זמינה</span>
+      <a id="updateAlertLink" href="#" target="_blank" class="update-link">הורדה</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- כותרת עליונה וסרגל פעולות יציב -->
+    <div class="header">
+      <div class="header-brand">
+        <img src="icons/icon48.png" alt="לוגו" class="header-logo">
+        <h2 class="header-title">HuaweiStickManager</h2>
+      </div>
+
+      <div class="header-actions">
+        <!-- תיבת מספר גרסה קטנה ואלגנטית (בלי V) - לחיצה בודקת עדכון -->
+        <button id="versionBadgeBtn" class="header-version-badge" title="גרסה נוכחית. לחץ לבדיקת עדכונים">
+          <span id="versionText">-</span>
+        </button>
+
+        <!-- אייקון חיווי חיבור מתחלף -->
+        <button id="connectionStatusBtn" class="ctrl-btn status-icon-btn" title="בודק חיבור...">
+          <svg class="svg-icon" id="statusIconSvg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </button>
+
+        <!-- כפתור רענון נתונים -->
+        <button id="refreshDataBtn" class="ctrl-btn" title="רענן נתונים">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+        </button>
+
+        <!-- פתיחה בפאנל צד (נסתר כשאנו כבר בפאנל צד) -->
+        <button id="openSidePanelBtn" class="ctrl-btn" title="פתח בפאנל צד">
+          <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+        </button>
+
+        <!-- פתיחה בכרטיסייה חדשה (נסתר כשאנו כבר בכרטיסייה) -->
+        <button id="openTabBtn" class="ctrl-btn" title="פתח בכרטיסייה חדשה">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- כפתורי ניווט (4 טאבים) -->
+    <div class="top-nav-buttons">
+      <button id="navMain" class="btn-secondary btn-active" title="ראשי">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      </button>
+      <button id="navSms" class="btn-secondary" title="הודעות SMS">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        <span id="smsBadge" class="fax-badge" style="display: none;">0</span>
+      </button>
+      <button id="navDevices" class="btn-secondary" title="ניהול והתקנים">
+        <svg class="svg-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+      </button>
+      <button id="navOptions" class="btn-secondary" title="הגדרות">
+        <!-- אייקון גלגל שיניים קווי מושלם ותקין -->
+        <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+
+    <!-- תוכן נגלל יציב -->
+    <div class="scrollable-content">
+      
+      <!-- אזור 1: דאשבורד ראשי -->
+      <div id="sectionMain" class="section-content active">
+        
+        <div class="top-metrics-grid">
+          <div class="msg-card text-center" style="margin-bottom:0; padding:10px;">
+            <div class="msg-header" style="justify-content:center; margin-bottom:6px;">
+              <span class="msg-source">קליטה ורשת</span>
+            </div>
+            <div id="dynamicSignalIcon" style="margin-bottom:6px;"></div>
+            <div class="msg-body" id="networkVal" style="font-weight:700; margin:0; font-size:12px;">טוען...</div>
+          </div>
+          <div class="msg-card text-center" style="margin-bottom:0; padding:10px;">
+            <div class="msg-header" style="justify-content:center; margin-bottom:6px;">
+              <span class="msg-source">סוללה</span>
+            </div>
+            <div id="dynamicBatteryIcon" style="margin-bottom:6px;"></div>
+            <div class="msg-body" id="batteryVal" style="font-weight:700; margin:0; font-size:12px;">טוען...</div>
+          </div>
+        </div>
+
+        <!-- כרטיסיית חבילת גלישה חודשית -->
+        <div class="msg-card">
+          <div class="msg-header">
+            <span class="msg-source">
+              <svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+              חבילת גלישה חודשית
+            </span>
+            <span id="resetDayBadge" class="info-badge">מתחדש ב-1 לחודש</span>
+          </div>
+
+          <div style="margin-top: 6px;">
+            <div class="bar-header-row">
+              <span class="bar-title">ניצול נפח:</span>
+              <strong id="dataVal" style="font-size:13px; color:var(--text); direction:ltr;">טוען...</strong>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="dataFill"></div></div>
+          </div>
+
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border);">
+            <div class="bar-header-row">
+              <span class="bar-title">קצב צריכה לימי החודש:</span>
+              <span id="pacePercentText" style="font-size:11px; font-weight:700; direction:ltr;">טוען...</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="paceFill"></div></div>
+            <div id="paceSubText" class="pace-status-text">מחשב נתונים...</div>
+          </div>
+
+          <!-- 3 תיבות פירוט חודשי -->
+          <div class="mini-stats-grid">
+            <div class="mini-stat-tile">
+              <span class="mini-stat-label">הורדה</span>
+              <span class="mini-stat-val" id="monthDownVal">-</span>
+            </div>
+            <div class="mini-stat-tile">
+              <span class="mini-stat-label">העלאה</span>
+              <span class="mini-stat-val" id="monthUpVal">-</span>
+            </div>
+            <div class="mini-stat-tile">
+              <span class="mini-stat-label">זמן מצטבר</span>
+              <span class="mini-stat-val" id="monthTimeVal">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- כרטיסיית גלישה נוכחית (סשן פעיל) -->
+        <div class="msg-card">
+          <div class="msg-header">
+            <span class="msg-source">גלישה נוכחית (חיבור פעיל)</span>
+          </div>
+          <div class="msg-body" style="font-weight: 700; margin:0 0 6px 0; text-align:center; font-size:14px; direction:ltr;" id="currentSessionVal">טוען...</div>
+          
+          <!-- 3 תיבות פירוט סשן -->
+          <div class="mini-stats-grid">
+            <div class="mini-stat-tile">
+              <span class="mini-stat-label">הורדה</span>
+              <span class="mini-stat-val" id="sessionDownVal">-</span>
+            </div>
+            <div class="mini-stat-tile">
+              <span class="mini-stat-label">העלאה</span>
+              <span class="mini-stat-val" id="sessionUpVal">-</span>
+            </div>
+            <div class="mini-stat-tile">
+              <span class="mini-stat-label">זמן בסשן</span>
+              <span class="mini-stat-val" id="sessionTimeVal">-</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- אזור 2: SMS -->
+      <div id="sectionSms" class="section-content" style="display: none;">
+        <div style="margin-bottom: 10px; display:flex;">
+          <button id="refreshSmsBtn" class="btn-primary" style="width: 100%;">
+            <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+            רענן הודעות
+          </button>
+        </div>
+        <div id="smsList">
+          <div class="loading">טוען הודעות SMS...</div>
+        </div>
+      </div>
+
+      <!-- אזור 3: ניהול והתקנים -->
+      <div id="sectionDevices" class="section-content" style="display: none;">
+        
+        <!-- זוג כפתורים מרובעים ואלגנטיים: WPS וכיבוי סטיק -->
+        <div class="devices-action-grid">
+          <button id="wpsBtn" class="device-square-btn" title="הפעלת צימוד WPS בסטיק למשך 2 דקות">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            <span id="wpsBtnText">הפעל WPS</span>
+          </button>
+          <button id="powerOffBtn" class="device-square-btn" title="כיבוי הסטיק לחלוטין">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            <span>כבה סטיק</span>
+          </button>
+        </div>
+
+        <div class="section-title" style="margin-top: 10px;">מחוברים כעת (<span id="devicesCountVal">0</span>):</div>
+        <div id="currentDevicesList" class="devices-list"></div>
+        
+        <!-- שורת כותרת היסטוריה עם כפתור מחיקה צר וקטנטן -->
+        <div class="history-header-row">
+          <span class="section-title" style="margin: 0;">היסטוריית התקנים:</span>
+          <button id="clearHistoryBtn" class="mini-trash-btn" title="מחיקת היסטוריית התקנים קודמים">
+            <svg class="svg-icon-tiny" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            <span>נקה</span>
+          </button>
+        </div>
+        <div id="historyDevicesList" class="devices-list"></div>
+
+        <!-- כרטיסיית שינוי סיסמת אלחוטי עם שדה מודרני מרווח -->
+        <div class="msg-card" style="margin-top: 12px;">
+          <div class="msg-header"><span class="msg-source">שינוי סיסמת אלחוטי (Wi-Fi)</span></div>
+          <div class="modern-wifi-row">
+            <input type="text" id="newWifiPassword" class="modern-wifi-input" placeholder="הזן סיסמה חדשה (מינימום 8 תווים)">
+            <button id="changeWifiPasswordBtn" class="btn-primary modern-wifi-btn">עדכן</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- אזור 4: הגדרות -->
+      <div id="sectionOptions" class="section-content" style="display: none;">
+        
+        <!-- סרגל עליון קשיח: יבוא (ימין), שמור הגדרות (מרכז), יצוא (שמאל) -->
+        <div class="settings-sticky-bar">
+          <button id="importSettingsBtn" class="btn-secondary sticky-side-btn" title="יבוא הגדרות מקובץ גיבוי">
+            <svg class="svg-icon-tiny" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>יבוא</span>
+          </button>
+
+          <button id="saveBtn" class="btn-primary settings-sticky-save" title="שמור את כל השינויים שבוצעו">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> 
+            <span>שמור הגדרות</span>
+          </button>
+
+          <button id="exportSettingsBtn" class="btn-secondary sticky-side-btn" title="יצוא הגדרות לקובץ גיבוי JSON">
+            <svg class="svg-icon-tiny" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span>יצוא</span>
+          </button>
+        </div>
+
+        <!-- מקטע 1: חבילת גלישה (3 תיבות בשורה מקבילה + כפתור 'משוך נתונים' ללא אייקון) -->
+        <div class="msg-card">
+          <div class="card-header-compact">
+            <span class="section-title">חבילת גלישה</span>
+            <button id="syncLimitBtn" class="mini-action-btn" title="שאב נתוני חבילה, תאריך חידוש וסף התראה ישירות מהסטיק">
+              <span>משוך נתונים</span>
+            </button>
+          </div>
+          
+          <div class="form-grid-3">
+            <div class="form-col">
+              <label>גודל (GB):</label>
+              <input type="number" id="dataLimit" min="1" value="50" style="text-align:center;">
+            </div>
+            <div class="form-col">
+              <label>יום חידוש:</label>
+              <input type="number" id="dataResetDay" min="1" max="31" value="1" style="text-align:center;">
+            </div>
+            <div class="form-col">
+              <label>התראה (%):</label>
+              <input type="number" id="dataThreshold" min="50" max="99" value="90" style="text-align:center;">
+            </div>
+          </div>
+          <div id="syncResultText" style="font-size:10px; margin-top:4px; text-align:center;"></div>
+        </div>
+
+        <!-- מקטע 2: התראות סוללה עם חציצה ברורה למצב חירום -->
+        <div class="msg-card">
+          <div class="card-header-compact">
+            <span class="section-title">התראות סוללה</span>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-col">
+              <label>התראה שקטה (%):</label>
+              <input type="number" id="batteryThreshold" min="5" max="50" value="20" style="text-align:center;">
+            </div>
+            <div class="form-col">
+              <label>סף חירום (%):</label>
+              <input type="number" id="batteryCriticalLevel" min="1" max="20" value="5" style="text-align:center;">
+            </div>
+          </div>
+
+          <!-- אזור התראות חירום מובהק וברור -->
+          <div class="emergency-alert-section">
+            <span class="emergency-section-title">במצב חירום (סוללה קריטית) הפעל:</span>
+            <div class="toggle-chip-grid">
+              <label class="toggle-chip" title="פתיחת כרטיסיית חירום מלאה">
+                <input type="checkbox" id="critAlertTab">
+                <span>כרטיסייה</span>
+              </label>
+              <label class="toggle-chip" title="פתיחת חלון פופ-אפ צף ונפרד">
+                <input type="checkbox" id="critAlertWindow">
+                <span>חלון צף</span>
+              </label>
+              <label class="toggle-chip" title="השמעת צליל אזהרה קולי">
+                <input type="checkbox" id="critAlertSound">
+                <span>צליל</span>
+              </label>
+              <label class="toggle-chip" title="הצגת באנר התראה עליון בדף הפעיל">
+                <input type="checkbox" id="critAlertBanner">
+                <span>באנר</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- מקטע 3: פרטי גישה לראוטר (הועבר לסוף! 3 תיבות מקבילות בשורה + כפתור בדיקה בכותרת) -->
+        <div class="msg-card">
+          <div class="card-header-compact">
+            <span class="section-title">פרטי גישה לראוטר</span>
+            <button id="testAuthBtn" class="mini-action-btn" title="בדוק תקינות חיבור וסיסמה מול הסטיק">
+              <svg class="svg-icon-tiny" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <span>בדוק</span>
+            </button>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-col">
+              <label>כתובת IP:</label>
+              <input type="text" id="ipInput" value="192.168.8.1" style="direction:ltr; text-align:center;">
+            </div>
+            <div class="form-col">
+              <label>משתמש:</label>
+              <input type="text" id="usernameInput" value="admin" style="direction:ltr; text-align:center;">
+            </div>
+            <div class="form-col">
+              <label>סיסמה:</label>
+              <div class="compact-pass-field">
+                <input type="password" id="passwordInput" placeholder="סיסמה">
+                <button id="togglePasswordBtn" class="pass-eye-btn" title="הצג/הסתר סיסמה">
+                  <svg class="svg-icon-tiny" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="authTestResult" style="font-size:10px; font-weight:700; margin-top:4px; text-align:center;"></div>
+        </div>
+
+        <!-- פוטר וקרדיטים בעיצוב אחיד ונקי -->
+        <div class="footer">
+          <div class="footer-line">כל הזכויות שמורות</div>
+          <div class="footer-line"><a href="https://github.com/Tzadikvtovlo" target="_blank" class="footer-link">צדיק וטוב לו</a></div>
+          <div class="footer-line"><a href="https://github.com/Tzadikvtovlo/HuaweiStickManager" target="_blank" class="footer-link">נהנית? תן כוכב</a></div>
+          <div class="footer-line"><span id="creditEmail" class="footer-email">q9411aa@gmail.com</span></div>
+        </div>
+
+      </div>
+    </div> 
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
