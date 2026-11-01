@@ -6,13 +6,13 @@
   "permissions": [
     "storage",
     "alarms",
-    "notifications",
     "sidePanel",
-    "cookies"
+    "cookies",
+    "scripting"
   ],
   "host_permissions": [
     "http://*/*",
-    "https://api.github.com/*"
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js"
