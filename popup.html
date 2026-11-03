@@ -7,23 +7,11 @@
 </head>
 <body>
   
-  <!-- תיבת הודעות פנימית (Toast) -->
   <div id="internalToast" class="internal-toast"></div>
-
-  <!-- שדה נסתר לקליטת קובץ יבוא הגדרות -->
   <input type="file" id="importFileInput" accept=".json" style="display:none">
 
-  <!-- באנר עדכון ייעודי -->
-  <div class="update-alert-box" id="updateAlertBox">
-    <div class="update-alert-content">
-      <svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-      <span id="updateAlertText">גרסה חדשה זמינה</span>
-      <a id="updateAlertLink" href="#" target="_blank" class="update-link">הורדה</a>
-    </div>
-  </div>
-
   <div class="container">
-    <!-- כותרת עליונה וסרגל פעולות יציב -->
+    <!-- כותרת עליונה -->
     <div class="header">
       <div class="header-brand">
         <img src="icons/icon48.png" alt="לוגו" class="header-logo">
@@ -31,34 +19,31 @@
       </div>
 
       <div class="header-actions">
-        <!-- תיבת מספר גרסה קטנה ואלגנטית (בלי V) - לחיצה בודקת עדכון -->
-        <button id="versionBadgeBtn" class="header-version-badge" title="גרסה נוכחית. לחץ לבדיקת עדכונים">
-          <span id="versionText">-</span>
-        </button>
-
-        <!-- אייקון חיווי חיבור מתחלף -->
-        <button id="connectionStatusBtn" class="ctrl-btn status-icon-btn" title="בודק חיבור...">
-          <svg class="svg-icon" id="statusIconSvg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        </button>
-
-        <!-- כפתור רענון נתונים -->
-        <button id="refreshDataBtn" class="ctrl-btn" title="רענן נתונים">
+        <!-- אייקון הריענון קיבל כעת צבע תואם לשאר (מנוהל דרך ה-CSS) -->
+        <button id="refreshDataBtn" class="header-uniform-btn" title="רענן נתונים">
           <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
         </button>
 
-        <!-- פתיחה בפאנל צד (נסתר כשאנו כבר בפאנל צד) -->
-        <button id="openSidePanelBtn" class="ctrl-btn" title="פתח בפאנל צד">
-          <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+        <button id="versionBadgeBtn" class="header-uniform-btn version-btn" title="גרסה נוכחית. לחץ לבדיקת עדכונים">
+          <span id="versionText">-</span>
         </button>
 
-        <!-- פתיחה בכרטיסייה חדשה (נסתר כשאנו כבר בכרטיסייה) -->
-        <button id="openTabBtn" class="ctrl-btn" title="פתח בכרטיסייה חדשה">
-          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        <button id="connectionStatusBtn" class="header-uniform-btn status-icon-btn" title="בודק חיבור...">
+          <svg class="svg-icon" id="statusIconSvg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
         </button>
       </div>
     </div>
 
-    <!-- כפתורי ניווט (4 טאבים) -->
+    <!-- באנר עדכון ייעודי - הועבר לכאן! בין הכותרת לכפתורי המצב -->
+    <div class="update-alert-box" id="updateAlertBox">
+      <div class="update-alert-content">
+        <svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        <span id="updateAlertText">גרסה חדשה זמינה</span>
+        <a id="updateAlertLink" href="#" class="update-link">הורדה</a>
+      </div>
+    </div>
+
+    <!-- כפתורי ניווט (מוגדרים כעת ב-Flex גמיש ב-CSS) -->
     <div class="top-nav-buttons">
       <button id="navMain" class="btn-secondary btn-active" title="ראשי">
         <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
@@ -71,8 +56,15 @@
         <svg class="svg-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
       </button>
       <button id="navOptions" class="btn-secondary" title="הגדרות">
-        <!-- אייקון גלגל שיניים קווי מושלם ותקין -->
         <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+      
+      <!-- הכפתורים נהיו ריבועים קטנים ב-CSS -->
+      <button id="openSidePanelBtn" class="btn-secondary ext-btn" title="פתח בפאנל צד">
+        <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+      </button>
+      <button id="openTabBtn" class="btn-secondary ext-btn" title="פתח בכרטיסייה מלאה">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
       </button>
     </div>
 
@@ -81,7 +73,6 @@
       
       <!-- אזור 1: דאשבורד ראשי -->
       <div id="sectionMain" class="section-content active">
-        
         <div class="top-metrics-grid">
           <div class="msg-card text-center" style="margin-bottom:0; padding:10px;">
             <div class="msg-header" style="justify-content:center; margin-bottom:6px;">
@@ -99,7 +90,6 @@
           </div>
         </div>
 
-        <!-- כרטיסיית חבילת גלישה חודשית -->
         <div class="msg-card">
           <div class="msg-header">
             <span class="msg-source">
@@ -108,7 +98,6 @@
             </span>
             <span id="resetDayBadge" class="info-badge">מתחדש ב-1 לחודש</span>
           </div>
-
           <div style="margin-top: 6px;">
             <div class="bar-header-row">
               <span class="bar-title">ניצול נפח:</span>
@@ -116,7 +105,6 @@
             </div>
             <div class="progress-bar"><div class="progress-fill" id="dataFill"></div></div>
           </div>
-
           <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border);">
             <div class="bar-header-row">
               <span class="bar-title">קצב צריכה לימי החודש:</span>
@@ -125,48 +113,22 @@
             <div class="progress-bar"><div class="progress-fill" id="paceFill"></div></div>
             <div id="paceSubText" class="pace-status-text">מחשב נתונים...</div>
           </div>
-
-          <!-- 3 תיבות פירוט חודשי -->
           <div class="mini-stats-grid">
-            <div class="mini-stat-tile">
-              <span class="mini-stat-label">הורדה</span>
-              <span class="mini-stat-val" id="monthDownVal">-</span>
-            </div>
-            <div class="mini-stat-tile">
-              <span class="mini-stat-label">העלאה</span>
-              <span class="mini-stat-val" id="monthUpVal">-</span>
-            </div>
-            <div class="mini-stat-tile">
-              <span class="mini-stat-label">זמן מצטבר</span>
-              <span class="mini-stat-val" id="monthTimeVal">-</span>
-            </div>
+            <div class="mini-stat-tile"><span class="mini-stat-label">הורדה</span><span class="mini-stat-val" id="monthDownVal">-</span></div>
+            <div class="mini-stat-tile"><span class="mini-stat-label">העלאה</span><span class="mini-stat-val" id="monthUpVal">-</span></div>
+            <div class="mini-stat-tile"><span class="mini-stat-label">זמן מצטבר</span><span class="mini-stat-val" id="monthTimeVal">-</span></div>
           </div>
         </div>
         
-        <!-- כרטיסיית גלישה נוכחית (סשן פעיל) -->
         <div class="msg-card">
-          <div class="msg-header">
-            <span class="msg-source">גלישה נוכחית (חיבור פעיל)</span>
-          </div>
+          <div class="msg-header"><span class="msg-source">גלישה נוכחית (חיבור פעיל)</span></div>
           <div class="msg-body" style="font-weight: 700; margin:0 0 6px 0; text-align:center; font-size:14px; direction:ltr;" id="currentSessionVal">טוען...</div>
-          
-          <!-- 3 תיבות פירוט סשן -->
           <div class="mini-stats-grid">
-            <div class="mini-stat-tile">
-              <span class="mini-stat-label">הורדה</span>
-              <span class="mini-stat-val" id="sessionDownVal">-</span>
-            </div>
-            <div class="mini-stat-tile">
-              <span class="mini-stat-label">העלאה</span>
-              <span class="mini-stat-val" id="sessionUpVal">-</span>
-            </div>
-            <div class="mini-stat-tile">
-              <span class="mini-stat-label">זמן בסשן</span>
-              <span class="mini-stat-val" id="sessionTimeVal">-</span>
-            </div>
+            <div class="mini-stat-tile"><span class="mini-stat-label">הורדה</span><span class="mini-stat-val" id="sessionDownVal">-</span></div>
+            <div class="mini-stat-tile"><span class="mini-stat-label">העלאה</span><span class="mini-stat-val" id="sessionUpVal">-</span></div>
+            <div class="mini-stat-tile"><span class="mini-stat-label">זמן בסשן</span><span class="mini-stat-val" id="sessionTimeVal">-</span></div>
           </div>
         </div>
-
       </div>
 
       <!-- אזור 2: SMS -->
@@ -184,8 +146,6 @@
 
       <!-- אזור 3: ניהול והתקנים -->
       <div id="sectionDevices" class="section-content" style="display: none;">
-        
-        <!-- זוג כפתורים מרובעים ואלגנטיים: WPS וכיבוי סטיק -->
         <div class="devices-action-grid">
           <button id="wpsBtn" class="device-square-btn" title="הפעלת צימוד WPS בסטיק למשך 2 דקות">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
@@ -196,11 +156,8 @@
             <span>כבה סטיק</span>
           </button>
         </div>
-
         <div class="section-title" style="margin-top: 10px;">מחוברים כעת (<span id="devicesCountVal">0</span>):</div>
         <div id="currentDevicesList" class="devices-list"></div>
-        
-        <!-- שורת כותרת היסטוריה עם כפתור מחיקה צר וקטנטן -->
         <div class="history-header-row">
           <span class="section-title" style="margin: 0;">היסטוריית התקנים:</span>
           <button id="clearHistoryBtn" class="mini-trash-btn" title="מחיקת היסטוריית התקנים קודמים">
@@ -209,8 +166,6 @@
           </button>
         </div>
         <div id="historyDevicesList" class="devices-list"></div>
-
-        <!-- כרטיסיית שינוי סיסמת אלחוטי עם שדה מודרני מרווח -->
         <div class="msg-card" style="margin-top: 12px;">
           <div class="msg-header"><span class="msg-source">שינוי סיסמת אלחוטי (Wi-Fi)</span></div>
           <div class="modern-wifi-row">
@@ -218,16 +173,13 @@
             <button id="changeWifiPasswordBtn" class="btn-primary modern-wifi-btn">עדכן</button>
           </div>
         </div>
-
       </div>
 
       <!-- אזור 4: הגדרות -->
       <div id="sectionOptions" class="section-content" style="display: none;">
-        
-        <!-- סרגל עליון קשיח: יבוא (ימין), שמור הגדרות (מרכז), יצוא (שמאל) -->
         <div class="settings-sticky-bar">
           <button id="importSettingsBtn" class="btn-secondary sticky-side-btn" title="יבוא הגדרות מקובץ גיבוי">
-            <svg class="svg-icon-tiny" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <svg class="svg-icon-tiny" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <span>יבוא</span>
           </button>
 
@@ -237,12 +189,39 @@
           </button>
 
           <button id="exportSettingsBtn" class="btn-secondary sticky-side-btn" title="יצוא הגדרות לקובץ גיבוי JSON">
-            <svg class="svg-icon-tiny" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <svg class="svg-icon-tiny" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             <span>יצוא</span>
           </button>
         </div>
 
-        <!-- מקטע 1: חבילת גלישה (3 תיבות בשורה מקבילה + כפתור 'משוך נתונים' ללא אייקון) -->
+        <div class="msg-card">
+          <div class="card-header-compact">
+            <span class="section-title">עדכון אוטומטי ברקע (עבור התראות חכמות)</span>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-col">
+              <label>בדיקת סוללה:</label>
+              <select id="batteryCheckInterval" class="modern-select">
+                <option value="1">כל דקה</option>
+                <option value="3">כל 3 דקות</option>
+                <option value="5">כל 5 דקות</option>
+                <option value="10">כל 10 דקות</option>
+                <option value="0">ללא בדיקה</option>
+              </select>
+            </div>
+            <div class="form-col">
+              <label>בדיקת גלישה ו-SMS:</label>
+              <select id="generalCheckInterval" class="modern-select">
+                <option value="1">כל דקה</option>
+                <option value="5">כל 5 דקות</option>
+                <option value="10">כל 10 דקות</option>
+                <option value="30">כל 30 דקות</option>
+                <option value="0">ללא בדיקה</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div class="msg-card">
           <div class="card-header-compact">
             <span class="section-title">חבילת גלישה</span>
@@ -250,7 +229,6 @@
               <span>משוך נתונים</span>
             </button>
           </div>
-          
           <div class="form-grid-3">
             <div class="form-col">
               <label>גודל (GB):</label>
@@ -268,12 +246,10 @@
           <div id="syncResultText" style="font-size:10px; margin-top:4px; text-align:center;"></div>
         </div>
 
-        <!-- מקטע 2: התראות סוללה עם חציצה ברורה למצב חירום -->
         <div class="msg-card">
           <div class="card-header-compact">
             <span class="section-title">התראות סוללה</span>
           </div>
-
           <div class="form-grid-2">
             <div class="form-col">
               <label>התראה שקטה (%):</label>
@@ -284,32 +260,17 @@
               <input type="number" id="batteryCriticalLevel" min="1" max="20" value="5" style="text-align:center;">
             </div>
           </div>
-
-          <!-- אזור התראות חירום מובהק וברור -->
           <div class="emergency-alert-section">
             <span class="emergency-section-title">במצב חירום (סוללה קריטית) הפעל:</span>
             <div class="toggle-chip-grid">
-              <label class="toggle-chip" title="פתיחת כרטיסיית חירום מלאה">
-                <input type="checkbox" id="critAlertTab">
-                <span>כרטיסייה</span>
-              </label>
-              <label class="toggle-chip" title="פתיחת חלון פופ-אפ צף ונפרד">
-                <input type="checkbox" id="critAlertWindow">
-                <span>חלון צף</span>
-              </label>
-              <label class="toggle-chip" title="השמעת צליל אזהרה קולי">
-                <input type="checkbox" id="critAlertSound">
-                <span>צליל</span>
-              </label>
-              <label class="toggle-chip" title="הצגת באנר התראה עליון בדף הפעיל">
-                <input type="checkbox" id="critAlertBanner">
-                <span>באנר</span>
-              </label>
+              <label class="toggle-chip" title="פתיחת כרטיסיית חירום מלאה"><input type="checkbox" id="critAlertTab"><span>כרטיסייה</span></label>
+              <label class="toggle-chip" title="פתיחת חלון פופ-אפ צף ונפרד"><input type="checkbox" id="critAlertWindow"><span>חלון צף</span></label>
+              <label class="toggle-chip" title="השמעת צליל אזהרה קולי"><input type="checkbox" id="critAlertSound"><span>צליל</span></label>
+              <label class="toggle-chip" title="הצגת באנר התראה עליון בדף הפעיל"><input type="checkbox" id="critAlertBanner"><span>באנר</span></label>
             </div>
           </div>
         </div>
 
-        <!-- מקטע 3: פרטי גישה לראוטר (הועבר לסוף! 3 תיבות מקבילות בשורה + כפתור בדיקה בכותרת) -->
         <div class="msg-card">
           <div class="card-header-compact">
             <span class="section-title">פרטי גישה לראוטר</span>
@@ -318,7 +279,6 @@
               <span>בדוק</span>
             </button>
           </div>
-
           <div class="form-grid-3">
             <div class="form-col">
               <label>כתובת IP:</label>
@@ -341,7 +301,6 @@
           <div id="authTestResult" style="font-size:10px; font-weight:700; margin-top:4px; text-align:center;"></div>
         </div>
 
-        <!-- פוטר וקרדיטים בעיצוב אחיד ונקי -->
         <div class="footer">
           <div class="footer-line">כל הזכויות שמורות</div>
           <div class="footer-line"><a href="https://github.com/Tzadikvtovlo" target="_blank" class="footer-link">צדיק וטוב לו</a></div>

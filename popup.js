@@ -5,10 +5,13 @@ const urlParams = new URLSearchParams(window.location.search);
 const currentMode = urlParams.get('mode');
 
 if (currentMode === 'tab' || window.innerWidth > 500) {
+  document.documentElement.classList.add('mode-tab');
   document.body.classList.add('mode-tab');
 } else if (currentMode === 'sidepanel' || (window.innerHeight > 520 && window.innerWidth <= 480)) {
+  document.documentElement.classList.add('mode-sidepanel');
   document.body.classList.add('mode-sidepanel');
 } else {
+  document.documentElement.classList.add('mode-popup');
   document.body.classList.add('mode-popup');
 }
 
@@ -61,7 +64,6 @@ async function hexSha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// פורמט זמנים קומפקטי עם הקפדה מוחלטת על עברית ו-RTL
 function formatDuration(secondsNum) {
   const s = parseInt(secondsNum, 10) || 0;
   const days = Math.floor(s / 86400);
@@ -251,7 +253,7 @@ class HuaweiClient {
 let client = null;
 
 // ========================================================
-// ניווט טאבים (UI) - 4 טאבים מאוחדים בלבד
+// ניווט טאבים (UI)
 // ========================================================
 const navBtns = ['navMain', 'navSms', 'navDevices', 'navOptions'];
 const sections = ['sectionMain', 'sectionSms', 'sectionDevices', 'sectionOptions'];
@@ -282,13 +284,13 @@ function goToSettingsPassword() {
 }
 
 // ========================================================
-// עדכון אייקון סטטוס החיבור העליון
+// עדכון עיצוב החיבור העליון
 // ========================================================
 function updateConnectionStatusUI(state, tooltipText) {
   const btn = document.getElementById('connectionStatusBtn');
   if (!btn) return;
 
-  btn.className = 'ctrl-btn status-icon-btn';
+  btn.className = 'header-uniform-btn status-icon-btn';
   btn.title = tooltipText;
 
   let svgContent = '';
@@ -308,7 +310,7 @@ function updateConnectionStatusUI(state, tooltipText) {
 }
 
 // ========================================================
-// SVG דינמיים קוויים אלגנטיים
+// SVG דינמיים
 // ========================================================
 function renderDynamicSignalSVG(levelNum) {
   const level = parseInt(levelNum, 10) || 0;
@@ -375,9 +377,7 @@ function renderPasswordRequiredCard(targetElementId, featureName) {
       </div>
       <h4>נדרשת סיסמת סטיק</h4>
       <p>הגישה ל-${featureName} חסומה על ידי הסטיק עד להזנת סיסמה תקינה בהגדרות התוסף.</p>
-      <button class="btn-primary auth-redirect-btn" style="padding: 5px 12px; font-size: 11px; margin: 0 auto;">
-        הגדר סיסמה כעת
-      </button>
+      <button class="btn-primary auth-redirect-btn" style="padding: 5px 12px; font-size: 11px; margin: 0 auto;">הגדר סיסמה כעת</button>
     </div>
   `;
   el.querySelector('.auth-redirect-btn')?.addEventListener('click', goToSettingsPassword);
@@ -386,29 +386,24 @@ function renderPasswordRequiredCard(targetElementId, featureName) {
 function calculateBillingCycleProgress(resetDay) {
   const now = new Date();
   const day = Math.min(Math.max(parseInt(resetDay, 10) || 1, 1), 31);
-
   let cycleStart = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0);
   let cycleEnd;
-
   if (now >= cycleStart) {
     cycleEnd = new Date(now.getFullYear(), now.getMonth() + 1, day, 0, 0, 0);
   } else {
     cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, day, 0, 0, 0);
     cycleEnd = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0);
   }
-
   const totalCycleMs = cycleEnd - cycleStart;
   const elapsedCycleMs = now - cycleStart;
-
   const totalDays = Math.max(1, Math.round(totalCycleMs / (1000 * 60 * 60 * 24)));
   const daysPassed = Math.max(0.5, elapsedCycleMs / (1000 * 60 * 60 * 24));
   const timeProgressRatio = Math.min(Math.max(elapsedCycleMs / totalCycleMs, 0), 1);
-
   return { totalDays, daysPassed, timeProgressRatio };
 }
 
 // ========================================================
-// טעינת הנתונים מהסטיק
+// טעינת הנתונים
 // ========================================================
 async function loadData() {
   const statusBtn = document.getElementById('connectionStatusBtn');
@@ -436,6 +431,8 @@ async function loadData() {
     renderDynamicBatterySVG(0, false);
     statusBtn?.classList.remove('loading');
     refreshBtn?.classList.remove('loading');
+    // עדכון סקריפט הרקע לנקות התראות
+    chrome.runtime.sendMessage({action: "forceCheck"});
     return;
   }
 
@@ -456,7 +453,6 @@ async function loadData() {
   }
 
   try {
-    // 1. קליטה, רשת וסוללה
     const statusRes = await client.get('api/monitoring/status');
     const statusDoc = parseXmlDoc(await statusRes.text());
 
@@ -475,14 +471,14 @@ async function loadData() {
 
     const battery = getVal(statusDoc, 'BatteryPercent') || getVal(statusDoc, 'BatteryLevel');
     const batStatus = getVal(statusDoc, 'BatteryStatus');
-    document.getElementById('batteryVal').innerText = battery ? `${battery}%${batStatus === '1' ? ' (בטעינה)' : ''}` : 'מחובר לחשמל';
-    renderDynamicBatterySVG(battery || 100, batStatus === '1');
+    const isCharging = (batStatus === '1');
+    document.getElementById('batteryVal').innerText = battery ? `${battery}%${isCharging ? ' (בטעינה)' : ''}` : 'מחובר לחשמל';
+    renderDynamicBatterySVG(battery || 100, isCharging);
 
     if (battery) {
-      await chrome.storage.local.set({ lastBatteryPercent: parseInt(battery, 10) });
+      await chrome.storage.local.set({ lastBatteryPercent: parseInt(battery, 10), isCharging: isCharging });
     }
 
-    // 2. תעבורה וסרגלים
     let monthDown = '0', monthUp = '0';
     try {
       const monthRes = await client.get('api/monitoring/month_statistics');
@@ -512,6 +508,9 @@ async function loadData() {
     dataFill.style.setProperty('--val', `${volumePercent}%`);
     dataFill.style.background = volumePercent >= settings.dataThreshold ? 'var(--status-alert)' : 'var(--accent)';
 
+    // שמירת נפח לשימוש ברקע
+    await chrome.storage.local.set({ dataUsagePct: Math.round(volumePercent) });
+
     const { totalDays, daysPassed, timeProgressRatio } = calculateBillingCycleProgress(resetDay);
     const expectedUsedGB = limitGB * timeProgressRatio; 
     const paceRatio = expectedUsedGB > 0 ? (totalMonthGB / expectedUsedGB) : 0;
@@ -538,33 +537,28 @@ async function loadData() {
       paceSubText.innerHTML = `בקצב מצוין. נותרו לך עוד <strong>${savedGB}GB</strong> רזרבה ליום ה-${daysPassedRounded} (מתוך ${totalDays})`;
     }
 
-    // נתוני סשן וזמנים
     const currentDown = parseInt(getVal(trafficDoc, 'CurrentDownload') || '0', 10);
     const currentUp = parseInt(getVal(trafficDoc, 'CurrentUpload') || '0', 10);
     const currentConnectTime = getVal(trafficDoc, 'CurrentConnectTime') || '0';
     const totalConnectTime = getVal(trafficDoc, 'TotalConnectTime') || '0';
 
     document.getElementById('currentSessionVal').innerText = formatBytes(currentDown + currentUp);
-    
-    // מילוי 3 תיבות חודשיות
     document.getElementById('monthDownVal').innerText = formatBytes(parseInt(monthDown, 10));
     document.getElementById('monthUpVal').innerText = formatBytes(parseInt(monthUp, 10));
     document.getElementById('monthTimeVal').innerText = formatDuration(totalConnectTime);
-
-    // מילוי 3 תיבות סשן נוכחי
     document.getElementById('sessionDownVal').innerText = formatBytes(currentDown);
     document.getElementById('sessionUpVal').innerText = formatBytes(currentUp);
     document.getElementById('sessionTimeVal').innerText = formatDuration(currentConnectTime);
 
-    // 3. הצגת הודעות SMS
     if (!hasFullAuth) {
       renderPasswordRequiredCard('smsList', 'קריאת הודעות SMS');
       document.getElementById('smsBadge').style.display = 'none';
+      await chrome.storage.local.set({ smsCount: 0 });
     } else {
       await renderSmsSection();
     }
 
-    // 4. התקנים מחוברים
+    // 4. התקנים
     let deviceHistory = settings.deviceHistory || {};
     if (!hasFullAuth) {
       renderPasswordRequiredCard('currentDevicesList', 'צפייה בהתקנים מחוברים');
@@ -573,7 +567,6 @@ async function loadData() {
       let hostRes = await client.get('api/wlan/host-list');
       let hostDoc = parseXmlDoc(await hostRes.text());
       let hostNodes = getNodes(hostDoc, 'Host');
-
       if (hostNodes.length === 0) {
         hostRes = await client.get('api/lan/HostList');
         if (hostRes.ok) {
@@ -581,13 +574,11 @@ async function loadData() {
           hostNodes = getNodes(hostDoc, 'Host');
         }
       }
-
       document.getElementById('devicesCountVal').innerText = hostNodes.length;
       const currentListEl = document.getElementById('currentDevicesList');
       currentListEl.innerHTML = '';
       const currentlyConnectedMacs = new Set();
       const nowStr = new Date().toLocaleString('he-IL');
-
       const editIconSvg = `<svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
 
       hostNodes.forEach(node => {
@@ -600,7 +591,6 @@ async function loadData() {
             deviceHistory[mac].lastSeen = nowStr;
             deviceHistory[mac].name = getVal(node, 'HostName') || deviceHistory[mac].name;
           }
-
           const displayName = deviceHistory[mac].customName || deviceHistory[mac].name;
           const div = document.createElement('div');
           div.className = 'device-item';
@@ -614,7 +604,6 @@ async function loadData() {
           currentListEl.appendChild(div);
         }
       });
-
       if (hostNodes.length === 0) {
         currentListEl.innerHTML = '<div class="empty" style="padding:12px;">אין התקנים מחוברים כעת</div>';
       }
@@ -648,10 +637,13 @@ async function loadData() {
 
   statusBtn?.classList.remove('loading');
   refreshBtn?.classList.remove('loading');
+
+  // טריגר לסנכרון הסמלון (Badge) של התוסף
+  chrome.runtime.sendMessage({action: "forceCheck"});
 }
 
 // ========================================================
-// שליפה וניהול הודעות SMS
+// שליפה וניהול SMS
 // ========================================================
 async function renderSmsSection() {
   const smsListEl = document.getElementById('smsList');
@@ -660,6 +652,9 @@ async function renderSmsSection() {
     const smsCountDoc = parseXmlDoc(await smsCountRes.text());
     const unreadSMS = parseInt(getVal(smsCountDoc, 'LocalUnread') || getVal(smsCountDoc, 'UnreadMessage') || '0', 10);
     const smsBadge = document.getElementById('smsBadge');
+    
+    await chrome.storage.local.set({ smsCount: unreadSMS });
+
     if (unreadSMS > 0) {
       smsBadge.innerText = unreadSMS;
       smsBadge.style.display = 'flex';
@@ -721,6 +716,7 @@ async function renderSmsSection() {
         await client.post('api/sms/set-read', `<?xml version="1.0" encoding="UTF-8"?><request><Index>${id}</Index></request>`);
         showInternalToast('ההודעה סומנה כנקראה');
         await renderSmsSection();
+        chrome.runtime.sendMessage({action: "forceCheck"});
       });
     });
 
@@ -732,6 +728,7 @@ async function renderSmsSection() {
         await client.post('api/sms/delete-sms', `<?xml version="1.0" encoding="UTF-8"?><request><Index>${id}</Index></request>`);
         showInternalToast('ההודעה נמחקה בהצלחה');
         await renderSmsSection();
+        chrome.runtime.sendMessage({action: "forceCheck"});
       });
     });
 
@@ -741,15 +738,13 @@ async function renderSmsSection() {
 }
 
 // ========================================================
-// בדיקת עדכוני גרסה מול GitHub
+// בדיקת עדכונים מול גיטהאב + הורדה אוטומטית
 // ========================================================
 async function checkForUpdates(isManual = false) {
   const alertBox = document.getElementById('updateAlertBox');
   const currentVersion = chrome.runtime.getManifest().version;
 
-  if (isManual) {
-    showInternalToast('בודק עדכונים מול GitHub...');
-  }
+  if (isManual) showInternalToast('בודק עדכונים מול GitHub...');
 
   try {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
@@ -762,45 +757,43 @@ async function checkForUpdates(isManual = false) {
       if (isNewer) {
         if (alertBox) {
           document.getElementById('updateAlertText').innerText = `גרסה חדשה זמינה (${latestVersion})`;
-          document.getElementById('updateAlertLink').href = data.html_url || `https://github.com/${GITHUB_REPO}/releases/latest`;
+          // הורדה ישירה דרך ה-API של כרום
+          document.getElementById('updateAlertLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            chrome.downloads.download({
+              url: `https://github.com/${GITHUB_REPO}/releases/latest/download/HuaweiStickManager.zip`,
+              filename: 'HuaweiStickManager.zip'
+            });
+            showInternalToast('מתחיל בהורדת העדכון...');
+          });
           alertBox.style.display = 'block';
         }
-        if (isManual) {
-          showInternalToast(`זמין עדכון חדש: ${latestVersion}`);
-        }
+        if (isManual) showInternalToast(`זמין עדכון חדש: ${latestVersion}`);
       } else {
-        if (isManual) {
-          showInternalToast('הגרסה שברשותך היא העדכנית ביותר');
-        }
+        if (isManual) showInternalToast('הגרסה שברשותך היא העדכנית ביותר');
       }
     }
   } catch (e) {
-    if (isManual) {
-      showInternalToast('שגיאה בבדיקת עדכונים מול השרת');
-    }
+    if (isManual) showInternalToast('שגיאה בבדיקת עדכונים מול השרת');
   }
 }
 
 // ========================================================
-// כפתורים ומאזיני אירועים
+// מאזינים נוספים
 // ========================================================
 document.getElementById('connectionStatusBtn').addEventListener('click', loadData);
 document.getElementById('refreshDataBtn').addEventListener('click', loadData);
 
-// הפעלת WPS
 let wpsCountdownInterval = null;
 function startWpsVisualAnimation(durationSeconds = 120) {
   const btn = document.getElementById('wpsBtn');
   const textEl = document.getElementById('wpsBtnText');
   if (!btn || !textEl) return;
-
   clearInterval(wpsCountdownInterval);
   btn.classList.add('btn-wps-active');
   btn.title = "צימוד WPS פעיל כעת בסטיק";
-
   let remaining = durationSeconds;
   textEl.innerText = `WPS פעיל (${remaining})`;
-
   wpsCountdownInterval = setInterval(() => {
     remaining--;
     if (remaining <= 0) {
@@ -818,20 +811,16 @@ function startWpsVisualAnimation(durationSeconds = 120) {
 document.getElementById('wpsBtn').addEventListener('click', async () => {
   const btn = document.getElementById('wpsBtn');
   if (btn.classList.contains('btn-wps-active')) return;
-
   const settings = await chrome.storage.local.get({ routerIp: '192.168.8.1', routerUsername: 'admin', routerPassword: '' });
   const wpsClient = new HuaweiClient(settings.routerIp, settings.routerUsername, settings.routerPassword);
   await wpsClient.login();
-
   try {
     let res = await wpsClient.post('api/wlan/wps-pbc', `<?xml version="1.0" encoding="UTF-8"?><request><WPSMode>1</WPSMode><ssidindex>0</ssidindex></request>`);
     let text = await res.text();
-
     if (!text.includes('OK') && !text.includes('1')) {
       res = await wpsClient.post('api/wlan/wps', `<?xml version="1.0" encoding="UTF-8"?><request><WPSPin></WPSPin><ssidindex>0</ssidindex></request>`);
       text = await res.text();
     }
-
     if (text.includes('OK') || text.includes('1')) {
       startWpsVisualAnimation(120);
       showInternalToast('מצב WPS הופעל למשך 2 דקות');
@@ -856,289 +845,175 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-// פתיחה בכרטיסייה מלאה (סוגר את הפופ-אפ)
-document.getElementById('openTabBtn').addEventListener('click', () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('popup.html?mode=tab') });
-  window.close();
-});
-
-// פתיחה בפאנל צד (סוגר את הפופ-אפ)
-document.getElementById('openSidePanelBtn').addEventListener('click', () => {
-  chrome.windows.getCurrent({ populate: true }, (windowObj) => {
-    chrome.sidePanel.open({ windowId: windowObj.id }).then(() => {
-      window.close();
-    }).catch(() => {
-      window.close();
-    });
-  });
-});
-
+document.getElementById('openTabBtn').addEventListener('click', () => { chrome.tabs.create({ url: chrome.runtime.getURL('popup.html?mode=tab') }); window.close(); });
+document.getElementById('openSidePanelBtn').addEventListener('click', () => { chrome.windows.getCurrent({ populate: true }, (w) => { chrome.sidePanel.open({ windowId: w.id }).then(() => { window.close(); }).catch(() => { window.close(); }); }); });
 document.getElementById('refreshSmsBtn').addEventListener('click', () => renderSmsSection());
+document.getElementById('togglePasswordBtn').addEventListener('click', () => { const i = document.getElementById('passwordInput'); i.type = (i.type === 'password') ? 'text' : 'password'; });
 
-document.getElementById('togglePasswordBtn').addEventListener('click', () => {
-  const pwdInput = document.getElementById('passwordInput');
-  pwdInput.type = (pwdInput.type === 'password') ? 'text' : 'password';
-});
-
-// בדיקת אימות וסיסמה ידנית (עם העלמת הודעה אוטומטית)
 document.getElementById('testAuthBtn').addEventListener('click', async () => {
   const ip = document.getElementById('ipInput').value.trim();
   const username = document.getElementById('usernameInput').value.trim();
   const password = document.getElementById('passwordInput').value;
   const statusSpan = document.getElementById('authTestResult');
-
   statusSpan.innerText = 'בודק אימות...';
   statusSpan.style.color = 'var(--text-muted)';
-
   const testClient = new HuaweiClient(ip, username, password);
   const ok = await testClient.refreshTokens();
   if (!ok) {
-    statusSpan.innerText = 'לא ניתן להגיע לסטיק. ודא חיבור לרשת';
-    statusSpan.style.color = 'var(--status-alert)';
-    setTimeout(() => { statusSpan.innerText = ''; }, 3500);
-    return;
+    statusSpan.innerText = 'לא ניתן להגיע לסטיק'; statusSpan.style.color = 'var(--status-alert)';
+    setTimeout(() => { statusSpan.innerText = ''; }, 3500); return;
   }
-
   if (!password) {
-    statusSpan.innerText = 'לא הוזנה סיסמה';
-    statusSpan.style.color = 'var(--status-alert)';
-    setTimeout(() => { statusSpan.innerText = ''; }, 3500);
-    return;
+    statusSpan.innerText = 'לא הוזנה סיסמה'; statusSpan.style.color = 'var(--status-alert)';
+    setTimeout(() => { statusSpan.innerText = ''; }, 3500); return;
   }
-
   const res = await testClient.login();
   if (res.success) {
-    statusSpan.innerText = 'האימות הצליח! יש הרשאות מלאות';
-    statusSpan.style.color = 'var(--accent)';
-    showInternalToast('אימות הסטיק עבר בהצלחה');
+    statusSpan.innerText = 'האימות הצליח!'; statusSpan.style.color = 'var(--accent)'; showInternalToast('אימות הסטיק עבר בהצלחה');
   } else {
     let msg = `שגיאה (קוד: ${res.code})`;
     if (res.code === '108002' || res.code === '108006') msg = 'סיסמה שגויה';
     else if (res.code === '108007') msg = 'הסטיק ננעל עקב ריבוי ניסיונות';
-    else if (res.code === '125001' || res.code === '125002') msg = 'בעיית Session/טוקן';
-    
-    statusSpan.innerText = msg;
-    statusSpan.style.color = 'var(--status-alert)';
+    statusSpan.innerText = msg; statusSpan.style.color = 'var(--status-alert)';
   }
-
-  // העלמת החיווי אחרי 3.5 שניות
   setTimeout(() => { statusSpan.innerText = ''; }, 3500);
 });
 
-// שאיבת הגדרות חבילת גלישה
 document.getElementById('syncLimitBtn').addEventListener('click', async () => {
   const ip = document.getElementById('ipInput').value.trim();
   const username = document.getElementById('usernameInput').value.trim();
   const password = document.getElementById('passwordInput').value;
   const resultText = document.getElementById('syncResultText');
-
-  resultText.innerText = 'מושך נתונים...';
-  resultText.style.color = 'var(--text-muted)';
+  resultText.innerText = 'מושך נתונים...'; resultText.style.color = 'var(--text-muted)';
 
   const syncClient = new HuaweiClient(ip, username, password);
   await syncClient.login();
-
   try {
     const res = await syncClient.get('api/monitoring/start_date');
     if (res.ok) {
       const xml = await res.text();
       const doc = parseXmlDoc(xml);
-
-      let limitGB = 0;
-      let thresholdPct = 0;
-      let startDay = 0;
-
+      let limitGB = 0, thresholdPct = 0, startDay = 0;
       let rawDay = getVal(doc, 'StartDay') || getVal(doc, 'start_day');
-      if (rawDay && parseInt(rawDay, 10) >= 1 && parseInt(rawDay, 10) <= 31) {
-        startDay = parseInt(rawDay, 10);
-      }
-
+      if (rawDay && parseInt(rawDay, 10) >= 1 && parseInt(rawDay, 10) <= 31) startDay = parseInt(rawDay, 10);
       const gbMatch = xml.match(/(\d+)\s*GB/i);
       const mbMatch = xml.match(/(\d+)\s*MB/i);
-
-      if (gbMatch) {
-        limitGB = parseInt(gbMatch[1], 10);
-      } else if (mbMatch) {
-        limitGB = Math.round(parseInt(mbMatch[1], 10) / 1024);
-      }
-
+      if (gbMatch) limitGB = parseInt(gbMatch[1], 10);
+      else if (mbMatch) limitGB = Math.round(parseInt(mbMatch[1], 10) / 1024);
       if (!limitGB) {
         const bigByteMatches = xml.match(/\b(\d{10,13})\b/g);
         if (bigByteMatches) {
           for (let b of bigByteMatches) {
             let calculated = Math.round(parseFloat(b) / (1024 ** 3));
-            if (calculated > 0 && calculated < 10000) {
-              limitGB = calculated;
-              break;
-            }
+            if (calculated > 0 && calculated < 10000) { limitGB = calculated; break; }
           }
         }
       }
-
-      let rawThreshold = getVal(doc, 'DataMonthMonthThreshold') || 
-                         getVal(doc, 'MonthThreshold') || 
-                         getVal(doc, 'Threshold') || 
-                         getVal(doc, 'month_threshold_percent');
-
+      let rawThreshold = getVal(doc, 'DataMonthMonthThreshold') || getVal(doc, 'MonthThreshold') || getVal(doc, 'Threshold') || getVal(doc, 'month_threshold_percent');
       if (rawThreshold) {
         let tNum = parseInt(rawThreshold.replace(/\D/g, ''), 10);
-        if (tNum >= 50 && tNum <= 99) {
-          thresholdPct = tNum;
-        }
+        if (tNum >= 50 && tNum <= 99) thresholdPct = tNum;
       }
-
       if (!thresholdPct) {
         const pctMatches = xml.match(/>(\d{2})</g);
         if (pctMatches) {
           for (let m of pctMatches) {
             let val = parseInt(m.replace(/\D/g, ''), 10);
-            if (val >= 50 && val <= 99 && val !== limitGB) {
-              thresholdPct = val;
-              break;
-            }
+            if (val >= 50 && val <= 99 && val !== limitGB) { thresholdPct = val; break; }
           }
         }
       }
-
       if (!startDay) {
         const dayMatch = xml.match(/>([1-9]|[12][0-9]|3[01])</);
-        if (dayMatch) {
-          startDay = parseInt(dayMatch[1], 10);
-        }
+        if (dayMatch) startDay = parseInt(dayMatch[1], 10);
       }
-
       if (limitGB > 0) document.getElementById('dataLimit').value = limitGB;
       if (thresholdPct > 0) document.getElementById('dataThreshold').value = thresholdPct;
       if (startDay > 0) document.getElementById('dataResetDay').value = startDay;
 
       if (limitGB > 0) {
-        resultText.innerText = `נמשך בהצלחה: חבילה ${limitGB}GB, יום ${document.getElementById('dataResetDay').value}, התראה ${document.getElementById('dataThreshold').value}%`;
-        resultText.style.color = 'var(--accent)';
-        showInternalToast('נתוני החבילה וההתראה נשאבו בהצלחה!');
-        markUnsavedSettings();
-      } else {
-        resultText.innerText = 'לא זוהו נתונים תקינים מהסטיק.';
-        resultText.style.color = 'var(--text-muted)';
-      }
-    } else {
-      resultText.innerText = 'לא ניתן לקרוא נתונים. ודא שהסיסמה נכונה.';
-      resultText.style.color = 'var(--status-alert)';
-    }
-  } catch (e) {
-    resultText.innerText = 'שגיאה במשיכת הנתונים מהסטיק.';
-    resultText.style.color = 'var(--status-alert)';
-  }
+        resultText.innerText = `נמשך בהצלחה!`; resultText.style.color = 'var(--accent)';
+        showInternalToast('נתוני החבילה וההתראה נשאבו בהצלחה!'); markUnsavedSettings();
+      } else { resultText.innerText = 'לא זוהו נתונים'; resultText.style.color = 'var(--text-muted)'; }
+    } else { resultText.innerText = 'שגיאה: ודא סיסמה נכונה'; resultText.style.color = 'var(--status-alert)'; }
+  } catch (e) { resultText.innerText = 'שגיאה במשיכת הנתונים'; resultText.style.color = 'var(--status-alert)'; }
+  setTimeout(() => { resultText.innerText = ''; }, 3500);
 });
 
-// כיבוי הסטיק
 document.getElementById('powerOffBtn').addEventListener('click', async () => {
   if (!confirm('האם אתה בטוח שברצונך לכבות את הסטיק? תצטרך להדליקו פיזית מחדש.')) return;
   const ip = document.getElementById('ipInput').value.trim();
   const username = document.getElementById('usernameInput').value.trim();
   const password = document.getElementById('passwordInput').value;
-
   const ctrlClient = new HuaweiClient(ip, username, password);
   const loginRes = await ctrlClient.login();
   if (!loginRes.success) return showInternalToast('שגיאת הרשאה. נדרשת סיסמה תקינה');
-
   try {
     const res = await ctrlClient.post('api/device/control', `<?xml version="1.0" encoding="UTF-8"?><request><Control>4</Control></request>`);
     if (res.ok) showInternalToast('פקודת כיבוי נשלחה בהצלחה');
-  } catch (e) {
-    showInternalToast('שגיאה בשליחת פקודת הכיבוי');
-  }
+  } catch (e) { showInternalToast('שגיאה בשליחת פקודת הכיבוי'); }
 });
 
-// שינוי סיסמת Wi-Fi
 document.getElementById('changeWifiPasswordBtn').addEventListener('click', async () => {
   const newPass = document.getElementById('newWifiPassword').value;
   if (newPass.length < 8) return showInternalToast('סיסמה חייבת להכיל לפחות 8 תווים');
   if (!confirm(`האם לשנות את סיסמת ה-WiFi ל- "${newPass}"? כל ההתקנים ינותקו.`)) return;
-
   const ip = document.getElementById('ipInput').value.trim();
   const username = document.getElementById('usernameInput').value.trim();
   const password = document.getElementById('passwordInput').value;
-
   const wifiClient = new HuaweiClient(ip, username, password);
   const loginRes = await wifiClient.login();
   if (!loginRes.success) return showInternalToast('שגיאת הרשאה. סיסמה שגויה');
-
   try {
     const resGet = await wifiClient.get('api/wlan/basic-settings');
     const currentSettingsXml = await resGet.text();
     const newXmlData = currentSettingsXml.replace(/<WifiWpapsk>.*?<\/WifiWpapsk>/g, `<WifiWpapsk>${newPass}</WifiWpapsk>`);
-    
     const resPost = await wifiClient.post('api/wlan/basic-settings', newXmlData);
-    if (resPost.ok) {
-      showInternalToast('סיסמת ה-WiFi שונתה בהצלחה');
-      document.getElementById('newWifiPassword').value = '';
-    }
-  } catch (e) {
-    showInternalToast('שגיאה בעדכון הסיסמה');
-  }
+    if (resPost.ok) { showInternalToast('סיסמת ה-WiFi שונתה בהצלחה'); document.getElementById('newWifiPassword').value = ''; }
+  } catch (e) { showInternalToast('שגיאה בעדכון הסיסמה'); }
 });
 
-// איפוס היסטוריה
 document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
   if (confirm('האם למחוק את היסטוריית ההתקנים הקודמת?')) {
     const settings = await chrome.storage.local.get({ deviceHistory: {} });
     const currentMacs = Array.from(document.getElementById('currentDevicesList').querySelectorAll('.edit-btn')).map(btn => btn.getAttribute('data-mac'));
     const newHistory = {};
-    currentMacs.forEach(mac => {
-      if (settings.deviceHistory[mac]) newHistory[mac] = settings.deviceHistory[mac];
-    });
+    currentMacs.forEach(mac => { if (settings.deviceHistory[mac]) newHistory[mac] = settings.deviceHistory[mac]; });
     await chrome.storage.local.set({ deviceHistory: newHistory });
-    showInternalToast('היסטוריית ההתקנים אופסה');
-    loadData();
+    showInternalToast('היסטוריית ההתקנים אופסה'); loadData();
   }
 });
 
-// לחיצה על תיבת הגרסה בראש העמוד
-document.getElementById('versionBadgeBtn').addEventListener('click', () => {
-  checkForUpdates(true);
-});
+document.getElementById('versionBadgeBtn').addEventListener('click', () => checkForUpdates(true));
 
-// ========================================================
-// יצוא ויבוא הגדרות
-// ========================================================
 document.getElementById('exportSettingsBtn').addEventListener('click', async () => {
   const allSettings = await chrome.storage.local.get(null);
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allSettings, null, 2));
   const dlAnchor = document.createElement('a');
   dlAnchor.setAttribute("href", dataStr);
   dlAnchor.setAttribute("download", "HuaweiStick_Backup.json");
-  document.body.appendChild(dlAnchor);
-  dlAnchor.click();
-  dlAnchor.remove();
+  document.body.appendChild(dlAnchor); dlAnchor.click(); dlAnchor.remove();
   showInternalToast('ההגדרות יוצאו בהצלחה לקובץ');
 });
 
-document.getElementById('importSettingsBtn').addEventListener('click', () => {
-  document.getElementById('importFileInput').click();
-});
+document.getElementById('importSettingsBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
 
 document.getElementById('importFileInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = async (evt) => {
     try {
       const imported = JSON.parse(evt.target.result);
       if (typeof imported === 'object') {
-        await chrome.storage.local.set(imported);
-        await initSettings();
-        showInternalToast('ההגדרות יובאו בהצלחה!');
-        loadData();
+        await chrome.storage.local.set(imported); await initSettings();
+        showInternalToast('ההגדרות יובאו בהצלחה!'); loadData();
       }
-    } catch(err) {
-      showInternalToast('שגיאה בפענוח קובץ הגיבוי');
-    }
+    } catch(err) { showInternalToast('שגיאה בפענוח קובץ הגיבוי'); }
   };
   reader.readAsText(file);
 });
 
-// העתקת מייל ללוח
 const creditEmailEl = document.getElementById('creditEmail');
 if (creditEmailEl) {
   creditEmailEl.addEventListener('click', async (e) => {
@@ -1146,21 +1021,14 @@ if (creditEmailEl) {
     try {
       await navigator.clipboard.writeText('q9411aa@gmail.com');
       const origText = creditEmailEl.innerText;
-      creditEmailEl.innerText = 'הועתק';
-      creditEmailEl.classList.add('copied');
-      setTimeout(() => {
-        creditEmailEl.innerText = origText;
-        creditEmailEl.classList.remove('copied');
-      }, 3000);
+      creditEmailEl.innerText = 'הועתק'; creditEmailEl.classList.add('copied');
+      setTimeout(() => { creditEmailEl.innerText = origText; creditEmailEl.classList.remove('copied'); }, 3000);
     } catch (err) {}
   });
 }
 
-function markUnsavedSettings() {
-  document.getElementById('saveBtn')?.classList.add('btn-unsaved-pulse');
-}
-
-['ipInput', 'usernameInput', 'passwordInput', 'dataLimit', 'dataResetDay', 'dataThreshold', 'batteryThreshold', 'batteryCriticalLevel'].forEach(id => {
+function markUnsavedSettings() { document.getElementById('saveBtn')?.classList.add('btn-unsaved-pulse'); }
+['ipInput', 'usernameInput', 'passwordInput', 'dataLimit', 'dataResetDay', 'dataThreshold', 'batteryThreshold', 'batteryCriticalLevel', 'batteryCheckInterval', 'generalCheckInterval'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', markUnsavedSettings);
 });
 ['critAlertTab', 'critAlertWindow', 'critAlertSound', 'critAlertBanner'].forEach(id => {
@@ -1170,13 +1038,14 @@ function markUnsavedSettings() {
 async function initSettings() {
   const currentVersion = chrome.runtime.getManifest().version;
   const versionTextEl = document.getElementById('versionText');
-  if (versionTextEl) versionTextEl.innerText = `${currentVersion}`; // בלי V
+  if (versionTextEl) versionTextEl.innerText = `${currentVersion}`;
 
   const s = await chrome.storage.local.get({
     routerIp: '192.168.8.1', routerUsername: 'admin', routerPassword: '',
     batteryThreshold: 20, batteryCriticalLevel: 5,
     critAlertTab: true, critAlertWindow: false, critAlertSound: true, critAlertBanner: false,
-    dataLimitGB: 50, dataResetDay: 1, dataThreshold: 90
+    dataLimitGB: 50, dataResetDay: 1, dataThreshold: 90,
+    batteryCheckInterval: 3, generalCheckInterval: 5
   });
 
   document.getElementById('ipInput').value = s.routerIp;
@@ -1191,6 +1060,8 @@ async function initSettings() {
   document.getElementById('dataLimit').value = s.dataLimitGB;
   document.getElementById('dataResetDay').value = s.dataResetDay || 1;
   document.getElementById('dataThreshold').value = s.dataThreshold;
+  document.getElementById('batteryCheckInterval').value = s.batteryCheckInterval;
+  document.getElementById('generalCheckInterval').value = s.generalCheckInterval;
 
   document.getElementById('saveBtn')?.classList.remove('btn-unsaved-pulse');
 }
@@ -1208,7 +1079,9 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     critAlertBanner: document.getElementById('critAlertBanner').checked,
     dataLimitGB: parseFloat(document.getElementById('dataLimit').value) || 50,
     dataResetDay: parseInt(document.getElementById('dataResetDay').value, 10) || 1,
-    dataThreshold: parseInt(document.getElementById('dataThreshold').value, 10)
+    dataThreshold: parseInt(document.getElementById('dataThreshold').value, 10),
+    batteryCheckInterval: parseInt(document.getElementById('batteryCheckInterval').value, 10) || 0,
+    generalCheckInterval: parseInt(document.getElementById('generalCheckInterval').value, 10) || 0
   });
 
   const btn = document.getElementById('saveBtn');
@@ -1217,14 +1090,13 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   btn.innerHTML = '<span>נשמר בהצלחה</span>';
   btn.style.background = 'var(--accent-hover)';
   showInternalToast('ההגדרות נשמרו בהצלחה');
-  setTimeout(() => {
-    btn.innerHTML = origText;
-    btn.style.background = '';
-  }, 2000);
+  
+  // עדכון התראות הרקע
+  chrome.runtime.sendMessage({action: 'updateAlarms'});
 
+  setTimeout(() => { btn.innerHTML = origText; btn.style.background = ''; }, 2000);
   loadData();
 });
 
-// התחלה
 checkForUpdates(false);
 initSettings().then(loadData);

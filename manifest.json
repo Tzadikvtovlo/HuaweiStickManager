@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "HuaweiStickManager",
-  "version": "1.0",
+  "version": "1.1",
   "description": "ניהול, ניטור ועיצוב חכם עבור סטיק של וואווי",
   "permissions": [
     "storage",
     "alarms",
     "sidePanel",
     "cookies",
-    "scripting"
+    "scripting",
+    "downloads"
   ],
   "host_permissions": [
     "http://*/*",
