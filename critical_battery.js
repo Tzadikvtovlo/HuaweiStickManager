@@ -34,20 +34,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 function playAlertTone() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const playBeep = (freq, start, duration) => {
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    const playBeep = (freq, start, duration, vol) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
+      osc.type = 'square';
       osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-      gain.gain.setValueAtTime(0.25, ctx.currentTime + start);
+      gain.gain.setValueAtTime(vol, ctx.currentTime + start);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(ctx.currentTime + start);
       osc.stop(ctx.currentTime + start + duration);
     };
-    playBeep(784, 0, 0.15);      // G5
-    playBeep(784, 0.2, 0.15);    // G5
-    playBeep(987.77, 0.4, 0.35); // B5
-  } catch(e) {}
+
+    for (let i = 0; i < 3; i++) {
+      playBeep(880, i * 0.8, 0.2, 0.1);
+      playBeep(1046.5, i * 0.8 + 0.2, 0.4, 0.1);
+    }
+  } catch (e) {}
 }

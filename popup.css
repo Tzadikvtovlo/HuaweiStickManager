@@ -90,15 +90,18 @@ body.mode-popup .container {
   box-shadow: none;
 }
 
-/* קונטיינר כרטיסייה */
+/* תיקון מלא לקונטיינר בכרטיסייה - הרקע ממלא הכל, הקופסה באמצע-למטה */
 body.mode-tab {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding: 40px 16px;
+  align-items: flex-start; 
   background: #e4ecf3;
+  min-height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 40px;
 }
 body.mode-tab .container {
+  margin-top: 12vh;
   width: 520px;
   max-width: 100%;
   height: auto;
@@ -109,7 +112,6 @@ body.mode-tab .container {
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(15, 35, 49, 0.12);
   padding: 18px;
-  margin: 0 auto;
 }
 body.mode-tab .scrollable-content { max-height: none; overflow: visible; }
 body.mode-tab #openTabBtn { display: none !important; }
@@ -185,7 +187,7 @@ body.mode-sidepanel #openSidePanelBtn { display: none !important; }
 .status-icon-btn.status-none { color: var(--status-alert); }
 .status-icon-btn.loading svg, .header-uniform-btn.loading svg { animation: spin 1s linear infinite; }
 
-/* התראת עדכון מעוצבת ומוגנת מתקלות גופן */
+/* התראת עדכון */
 .update-alert-box {
   display: none;
   background: var(--accent);
@@ -206,7 +208,7 @@ body.mode-sidepanel #openSidePanelBtn { display: none !important; }
   justify-content: center;
   color: #ffffff;
   text-decoration: none;
-  font-weight: 700; /* שינוי ל-700 שמונע את שיבוש הגופן */
+  font-weight: 700;
   border-radius: 4px;
   padding: 4px 10px;
   background: rgba(255, 255, 255, 0.2);
@@ -238,9 +240,7 @@ body.mode-sidepanel #openSidePanelBtn { display: none !important; }
   height: 34px;
 }
 .top-nav-buttons button:hover { background: #eaf1f6; color: var(--primary); }
-.top-nav-buttons > button:not(.ext-btn) {
-  flex: 1; 
-}
+.top-nav-buttons > button:not(.ext-btn) { flex: 1; }
 .btn-active { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
 
 /* כפתורי צד */
@@ -289,9 +289,12 @@ body.mode-sidepanel #openSidePanelBtn { display: none !important; }
 .progress-fill { height: 100%; width: var(--val, 0%); background: var(--accent); border-radius: 6px; transition: width 0.8s ease; }
 .pace-status-text { font-size: 10px; margin-top: 5px; text-align: right; font-weight: 600; color: var(--text-muted); direction: rtl !important; unicode-bidi: isolate !important; }
 
-.devices-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-.device-square-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; color: var(--text); font-size: 11px; font-weight: 600; transition: all 0.15s ease; }
+/* גריד של 3 פריטים לדגם הסטיק, WPS, וכיבוי */
+.devices-action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.device-square-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; color: var(--text); font-size: 11px; font-weight: 600; transition: all 0.15s ease; text-align: center; }
 .device-square-btn:hover { background: var(--accent-soft); border-color: var(--border-focus); color: var(--primary); }
+.device-square-btn.info-only { cursor: default; }
+.device-square-btn.info-only:hover { background: var(--surface); border-color: var(--border); color: var(--text); }
 
 .history-header-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; margin-bottom: 4px; }
 .mini-trash-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 500; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 3px; transition: all 0.15s ease; }
@@ -348,6 +351,16 @@ body.mode-sidepanel #openSidePanelBtn { display: none !important; }
 .devices-list { display: flex; flex-direction: column; gap: 5px; }
 .device-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px; }
 .device-mac { font-size: 10px; color: var(--text-muted); direction: ltr; text-align: right; }
+
+/* עיצוב עריכה מובנית */
+.device-name-container { display: flex; align-items: center; gap: 6px; flex: 1; }
+.ctrl-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; padding: 3px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s ease; flex-shrink: 0; }
+.ctrl-btn:hover { background: #f1f5f9; color: var(--primary); border-color: var(--border-focus); }
+.edit-btn:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.save-name-btn:hover { background: #dcfce7; color: #16a34a; border-color: #16a34a; }
+
+.inline-edit-input { border: 1px solid var(--accent); border-radius: 4px; padding: 2px 6px; font-size: 11px; font-family: inherit; outline: none; width: 120px; direction: rtl; color: var(--text); background: #f8fafc; }
+.inline-edit-input:focus { box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2); }
 
 .btn-primary { background: var(--accent); color: #ffffff; border: 1px solid var(--accent-hover); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .btn-primary:hover { background: var(--accent-hover); }

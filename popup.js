@@ -315,17 +315,24 @@ function updateConnectionStatusUI(state, tooltipText) {
 function renderDynamicSignalSVG(levelNum) {
   const level = parseInt(levelNum, 10) || 0;
   const color = level < 2 ? 'var(--status-alert)' : 'var(--accent)';
-  const bars = [
-    { x: 2, y: 17, h: 5 }, { x: 6, y: 14, h: 8 },
-    { x: 10, y: 11, h: 11 }, { x: 14, y: 8, h: 14 },
-    { x: 18, y: 5, h: 17 }
-  ];
+  const emptyColor = 'var(--border)';
+
+  // ציור אייקון קשתות (סטייל ווינדוס)
   let svg = `<svg viewBox="0 0 24 24" width="24" height="24">`;
-  bars.forEach((b, idx) => {
-    const isFilled = idx < level;
-    svg += `<rect x="${b.x}" y="${b.y}" width="3" height="${b.h}" rx="1" fill="${isFilled ? color : 'var(--border)'}" />`;
-  });
+  
+  // נקודת מרכז (Level 1)
+  svg += `<circle cx="12" cy="19" r="2" fill="${level >= 1 ? color : emptyColor}" />`;
+  // קשת 1 (Level 2)
+  svg += `<path d="M 9.17 16.17 A 4 4 0 0 1 14.83 16.17" fill="none" stroke="${level >= 2 ? color : emptyColor}" stroke-width="2" stroke-linecap="round"/>`;
+  // קשת 2 (Level 3)
+  svg += `<path d="M 6.34 13.34 A 8 8 0 0 1 17.66 13.34" fill="none" stroke="${level >= 3 ? color : emptyColor}" stroke-width="2" stroke-linecap="round"/>`;
+  // קשת 3 (Level 4)
+  svg += `<path d="M 3.51 10.51 A 12 12 0 0 1 20.49 10.51" fill="none" stroke="${level >= 4 ? color : emptyColor}" stroke-width="2" stroke-linecap="round"/>`;
+  // קשת 4 (Level 5)
+  svg += `<path d="M 0.69 7.69 A 16 16 0 0 1 23.31 7.69" fill="none" stroke="${level >= 5 ? color : emptyColor}" stroke-width="2" stroke-linecap="round"/>`;
+  
   svg += `</svg>`;
+  
   const el = document.getElementById('dynamicSignalIcon');
   if (el) el.innerHTML = svg;
 }
@@ -431,7 +438,6 @@ async function loadData() {
     renderDynamicBatterySVG(0, false);
     statusBtn?.classList.remove('loading');
     refreshBtn?.classList.remove('loading');
-    // עדכון סקריפט הרקע לנקות התראות
     chrome.runtime.sendMessage({action: "forceCheck"});
     return;
   }
@@ -476,7 +482,10 @@ async function loadData() {
     renderDynamicBatterySVG(battery || 100, isCharging);
 
     if (battery) {
-      await chrome.storage.local.set({ lastBatteryPercent: parseInt(battery, 10), isCharging: isCharging });
+      const bInt = parseInt(battery, 10);
+      await chrome.storage.local.set({ lastBatteryPercent: bInt, isCharging: isCharging });
+      // שידור עדכון סוללה למערך ההתראות ברקע (מונע התנגשות עם פעולת הטסט הידני)
+      chrome.runtime.sendMessage({action: "evaluateBatteryAlerts", batteryPercent: bInt, isCharging: isCharging});
     }
 
     let monthDown = '0', monthUp = '0';
@@ -508,7 +517,6 @@ async function loadData() {
     dataFill.style.setProperty('--val', `${volumePercent}%`);
     dataFill.style.background = volumePercent >= settings.dataThreshold ? 'var(--status-alert)' : 'var(--accent)';
 
-    // שמירת נפח לשימוש ברקע
     await chrome.storage.local.set({ dataUsagePct: Math.round(volumePercent) });
 
     const { totalDays, daysPassed, timeProgressRatio } = calculateBillingCycleProgress(resetDay);
@@ -558,12 +566,27 @@ async function loadData() {
       await renderSmsSection();
     }
 
-    // 4. התקנים
+    // 4. התקנים (ושליפת דגם הראוטר)
     let deviceHistory = settings.deviceHistory || {};
     if (!hasFullAuth) {
       renderPasswordRequiredCard('currentDevicesList', 'צפייה בהתקנים מחוברים');
       document.getElementById('devicesCountVal').innerText = '-';
+      const modelVal = document.getElementById('deviceModelVal');
+      if (modelVal) modelVal.innerText = 'ללא הרשאה';
     } else {
+      
+      try {
+         const devInfoRes = await client.get('api/device/information');
+         if (devInfoRes.ok) {
+           const devInfoDoc = parseXmlDoc(await devInfoRes.text());
+           const devName = getVal(devInfoDoc, 'DeviceName') || getVal(devInfoDoc, 'FullName') || 'לא ידוע';
+           document.getElementById('deviceModelVal').innerText = devName;
+         }
+      } catch(e) {
+         const modelVal = document.getElementById('deviceModelVal');
+         if (modelVal) modelVal.innerText = 'שגיאה';
+      }
+
       let hostRes = await client.get('api/wlan/host-list');
       let hostDoc = parseXmlDoc(await hostRes.text());
       let hostNodes = getNodes(hostDoc, 'Host');
@@ -579,7 +602,9 @@ async function loadData() {
       currentListEl.innerHTML = '';
       const currentlyConnectedMacs = new Set();
       const nowStr = new Date().toLocaleString('he-IL');
-      const editIconSvg = `<svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+      
+      // אייקון עריכה מעודכן, נקי ואלגנטי
+      const editIconSvg = `<svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
 
       hostNodes.forEach(node => {
         const mac = getVal(node, 'MacAddress');
@@ -595,7 +620,7 @@ async function loadData() {
           const div = document.createElement('div');
           div.className = 'device-item';
           div.innerHTML = `
-            <div style="display:flex; align-items:center; gap:6px;">
+            <div class="device-name-container">
               <button class="ctrl-btn edit-btn" data-mac="${mac}" title="ערוך שם">${editIconSvg}</button>
               <strong>${displayName}</strong>
             </div>
@@ -614,7 +639,9 @@ async function loadData() {
     historyListEl.innerHTML = '';
     let historyCount = 0;
     const currentMacSet = new Set(Array.from(document.querySelectorAll('#currentDevicesList .edit-btn')).map(b => b.getAttribute('data-mac')));
-    const editIconSvg = `<svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+    
+    // אייקון עריכה מעודכן, נקי ואלגנטי
+    const editIconSvg = `<svg class="svg-icon-small" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
 
     for (const [mac, data] of Object.entries(deviceHistory)) {
       if (!currentMacSet.has(mac)) {
@@ -622,7 +649,7 @@ async function loadData() {
         const div = document.createElement('div');
         div.className = 'device-item';
         div.innerHTML = `
-          <div style="display:flex; align-items:center; gap:6px;">
+          <div class="device-name-container">
             <button class="ctrl-btn edit-btn" data-mac="${mac}" title="ערוך שם">${editIconSvg}</button> 
             <strong>${data.customName || data.name}</strong>
           </div>
@@ -638,7 +665,6 @@ async function loadData() {
   statusBtn?.classList.remove('loading');
   refreshBtn?.classList.remove('loading');
 
-  // טריגר לסנכרון הסמלון (Badge) של התוסף
   chrome.runtime.sendMessage({action: "forceCheck"});
 }
 
@@ -757,7 +783,6 @@ async function checkForUpdates(isManual = false) {
       if (isNewer) {
         if (alertBox) {
           document.getElementById('updateAlertText').innerText = `גרסה חדשה זמינה (${latestVersion})`;
-          // הורדה ישירה דרך ה-API של כרום
           document.getElementById('updateAlertLink').addEventListener('click', (e) => {
             e.preventDefault();
             chrome.downloads.download({
@@ -779,7 +804,7 @@ async function checkForUpdates(isManual = false) {
 }
 
 // ========================================================
-// מאזינים נוספים
+// מאזינים נוספים (כולל עריכת שם התקן מובנית)
 // ========================================================
 document.getElementById('connectionStatusBtn').addEventListener('click', loadData);
 document.getElementById('refreshDataBtn').addEventListener('click', loadData);
@@ -830,18 +855,59 @@ document.getElementById('wpsBtn').addEventListener('click', async () => {
   }
 });
 
+// מאזין כללי ללחיצות על כפתורי העריכה/שמירה
 document.addEventListener('click', async (e) => {
-  const targetBtn = e.target.closest('.edit-btn');
-  if (targetBtn) {
-    const mac = targetBtn.getAttribute('data-mac');
-    const settings = await chrome.storage.local.get({ deviceHistory: {} });
-    const currentName = settings.deviceHistory[mac]?.customName || settings.deviceHistory[mac]?.name || '';
-    const newName = prompt('הזן שם מותאם אישית (השאר ריק לאיפוס):', currentName);
-    if (newName !== null) {
-      settings.deviceHistory[mac].customName = newName.trim();
-      await chrome.storage.local.set({ deviceHistory: settings.deviceHistory });
-      loadData();
+  // התחלת עריכה
+  const editBtn = e.target.closest('.edit-btn');
+  if (editBtn) {
+    const mac = editBtn.getAttribute('data-mac');
+    const nameEl = editBtn.nextElementSibling;
+    if(nameEl && nameEl.tagName === 'STRONG') {
+       const currentName = nameEl.innerText;
+       const container = editBtn.parentElement;
+       container.innerHTML = `
+         <button class="ctrl-btn save-name-btn" data-mac="${mac}" title="שמור">
+           <svg class="svg-icon-small" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+         </button>
+         <button class="ctrl-btn cancel-name-btn" title="ביטול">
+           <svg class="svg-icon-small" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+         </button>
+         <input type="text" class="inline-edit-input" value="${currentName}" />
+       `;
+       const inputEl = container.querySelector('.inline-edit-input');
+       inputEl.focus();
+       // מאפשר שמירה גם בלחיצה על מקש אנטר בתוך התיבה
+       inputEl.addEventListener('keydown', (ev) => {
+         if (ev.key === 'Enter') {
+            container.querySelector('.save-name-btn').click();
+         } else if (ev.key === 'Escape') {
+            container.querySelector('.cancel-name-btn').click();
+         }
+       });
     }
+    return;
+  }
+
+  // שמירת עריכה
+  const saveBtn = e.target.closest('.save-name-btn');
+  if (saveBtn) {
+     const mac = saveBtn.getAttribute('data-mac');
+     const input = saveBtn.parentElement.querySelector('.inline-edit-input');
+     const newName = input ? input.value.trim() : '';
+     const settings = await chrome.storage.local.get({ deviceHistory: {} });
+     if (settings.deviceHistory[mac]) {
+        settings.deviceHistory[mac].customName = newName;
+        await chrome.storage.local.set({ deviceHistory: settings.deviceHistory });
+     }
+     loadData();
+     return;
+  }
+
+  // ביטול עריכה (מחזיר את התצוגה הרגילה בלי לשמור)
+  const cancelBtn = e.target.closest('.cancel-name-btn');
+  if (cancelBtn) {
+     loadData(); 
+     return;
   }
 });
 
@@ -1091,7 +1157,6 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   btn.style.background = 'var(--accent-hover)';
   showInternalToast('ההגדרות נשמרו בהצלחה');
   
-  // עדכון התראות הרקע
   chrome.runtime.sendMessage({action: 'updateAlarms'});
 
   setTimeout(() => { btn.innerHTML = origText; btn.style.background = ''; }, 2000);
